@@ -1,24 +1,18 @@
-﻿using Dalamud.Game.Text.SeStringHandling.Payloads;
-using Dalamud.Interface.Colors;
-using Dalamud.Interface.Style;
-using Dalamud.Logging;
+﻿using Dalamud.Interface.Colors;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using System.Runtime.InteropServices;
 
 namespace SimpleCompare
 {
-    // It is good to have this be disposable in general, in case you ever need it
-    // to do any cleanup
     class PluginUI : IDisposable
     {
         private Configuration configuration;
 
-        // this extra bool exists for ImGui, since you can't ref a property
         private bool visible = false;
         public bool Visible
         {
@@ -32,10 +26,24 @@ namespace SimpleCompare
             get { return this.settingsVisible; }
             set { this.settingsVisible = value; }
         }
-        internal Item Item { get; set; }
-        private Vector2 LastMousePos { get; set; }
 
-        // passing in the image here just for simplicity
+        private Item item;
+        internal Item Item
+        {
+            get { return this.item; }
+            set
+            {
+                if (this.item != value)
+                {
+                    this.LastMousePos = ImGui.GetMousePos();
+                    this.item = value;
+                }
+            }
+        }
+
+        private Vector2 lastMousePos;
+        private Vector2 LastMousePos { get { return this.lastMousePos; } set { this.lastMousePos = value; } }
+
         public PluginUI(Configuration configuration)
         {
             this.configuration = configuration;
@@ -45,30 +53,41 @@ namespace SimpleCompare
         {
         }
 
+        [DllImport("user32.dll", CharSet = CharSet.Auto, ExactSpelling = true)]
+        private static extern short GetKeyState(int keyCode);
+
         public void Draw()
         {
-            if (this.Item == null)
+            if ((GetKeyState((int)0x10) & 0x8000) == 0)
+            {
+                this.LastMousePos = ImGui.GetMousePos();
                 return;
+            }
+
+            if (this.Item == null)
+            {
+                return;
+            }
 
             var equipSlot = this.Item.EquipSlotCategory;
             if (equipSlot == null)
+            {
                 return;
+            }
+
+            var ínventoryType = GetInventoryType(this.Item);
+            if (ínventoryType == InventoryType.ArmorySoulCrystal || ínventoryType == InventoryType.Inventory1)
+            {
+                return;
+            }
 
             var mousePos = ImGui.GetMousePos();
-            if (Math.Abs(mousePos.X - this.LastMousePos.X) > 200 || Math.Abs(mousePos.Y - this.LastMousePos.Y) > 200)
+            if (Vector2.Distance(this.LastMousePos, mousePos) > 75) // magic number for 4k
             {
                 this.Item = null;
                 this.LastMousePos = mousePos;
                 return;
             }
-
-
-            var ínventoryType = GetInventoryType(this.Item);
-            if (ínventoryType == InventoryType.ArmorySoulCrystal)
-            {
-                return;
-            }
-
 
             var equippedItems = GetEquippedItemsByType(ínventoryType);
             if (equippedItems.Count > 0)
@@ -160,9 +179,6 @@ namespace SimpleCompare
 
                 DrawStat(BaseParamToName(bonusType), valueB - valueA);
             }
-
-            PluginLog.LogDebug($"bonus={itemA}");
-
         }
 
         private string BaseParamToName(byte baseParam)

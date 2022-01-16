@@ -63,15 +63,11 @@ namespace SimpleCompare
 
         }
 
-        [DllImport("user32.dll", CharSet = CharSet.Auto, ExactSpelling = true)]
-        private static extern short GetKeyState(int keyCode);
+
 
         private void DrawUI()
         {
-            if ((GetKeyState((int)0x10) & 0x8000) != 0)
-            {
-                this.PluginUi.Draw();
-            }
+            this.PluginUi.Draw();
         }
 
 
@@ -85,6 +81,7 @@ namespace SimpleCompare
 #endif
             if (itemId > 2_000_000)
             {
+                this.PluginUi.Item = null;
                 return;
             }
 
@@ -96,9 +93,10 @@ namespace SimpleCompare
             var item = Service.Data.GetExcelSheet<Item>().GetRow((uint)itemId);
             if (item == null)
             {
+                this.PluginUi.Item = null;
                 return;
             }
-            
+
             this.PluginUi.Item = item;
 
             // TODO: display comparison in item tooltip?!
