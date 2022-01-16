@@ -3,9 +3,8 @@ using Dalamud.IoC;
 using Dalamud.Logging;
 using Dalamud.Plugin;
 using Lumina.Excel.GeneratedSheets;
+using System;
 using System.Runtime.InteropServices;
-using XivCommon;
-using XivCommon.Functions.Tooltips;
 
 namespace SimpleCompare
 {
@@ -18,7 +17,6 @@ namespace SimpleCompare
         private DalamudPluginInterface PluginInterface { get; init; }
         private CommandManager CommandManager { get; init; }
         private Configuration Configuration { get; init; }
-        private XivCommonBase CommonBase { get; set; }
         private PluginUI PluginUi { get; init; }
 
         public Plugin(
@@ -36,48 +34,14 @@ namespace SimpleCompare
 
             this.PluginUi = new PluginUI(this.Configuration);
 
-            this.CommonBase = new XivCommonBase(Hooks.Tooltips);
-            this.CommonBase.Functions.Tooltips.OnItemTooltip += this.OnItemTooltip;
-
-
             this.PluginInterface.UiBuilder.Draw += DrawUI;
 
+
+            Service.GameGui.HoveredItemChanged += this.OnItemHover;
         }
 
-        public void Dispose()
+        private void OnItemHover(object? sender, ulong itemId)
         {
-            this.CommandManager.RemoveHandler(commandName);
-            this.CommonBase.Functions.Tooltips.OnItemTooltip -= this.OnItemTooltip;
-            this.CommonBase.Dispose();
-            this.PluginUi.Dispose();
-        }
-
-
-        private void DrawUI()
-        {
-            if (Service.ClientState != null && Service.ClientState.IsLoggedIn)
-            {
-                // dont crash game!
-                try
-                {
-                    this.PluginUi.Draw();
-                }
-                catch (System.Exception ex)
-                {
-                    PluginLog.LogFatal(ex.ToString());
-                }
-            }
-        }
-
-
-        private void OnItemTooltip(ItemTooltip tooltip, ulong itemId)
-        {
-#if false
-            if (!tooltip.Fields.HasFlag(ItemTooltipFields.Description))
-            {
-                return;
-            }
-#endif
             if (itemId > 2_000_000)
             {
                 this.PluginUi.InvItem = null;
@@ -99,9 +63,30 @@ namespace SimpleCompare
             }
 
             this.PluginUi.InvItem = new InvItem(item, wasHQ);
+        }
+
+        public void Dispose()
+        {
+            this.CommandManager.RemoveHandler(commandName);
+            this.PluginUi.Dispose();
+            Service.GameGui.HoveredItemChanged -= this.OnItemHover;
+        }
 
 
-            // TODO: display comparison in item tooltip?!
+        private void DrawUI()
+        {
+            if (Service.ClientState != null && Service.ClientState.IsLoggedIn)
+            {
+                // dont crash game!
+                try
+                {
+                    this.PluginUi.Draw();
+                }
+                catch (System.Exception ex)
+                {
+                    PluginLog.LogFatal(ex.ToString());
+                }
+            }
         }
 
     }
