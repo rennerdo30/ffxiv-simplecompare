@@ -6,9 +6,24 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using static FFXIVClientStructs.FFXIV.Client.Game.InventoryItem;
+using System.Linq;
 
 namespace SimpleCompare
 {
+    class InvItem
+    {
+        public bool IsHQ;
+        public Item Item;
+
+        public InvItem(Item item, bool isHQ)
+        {
+            Item = item;
+            IsHQ = isHQ;
+        }
+    }
+
+
     class PluginUI : IDisposable
     {
         private Configuration configuration;
@@ -27,16 +42,16 @@ namespace SimpleCompare
             set { this.settingsVisible = value; }
         }
 
-        private Item item;
-        internal Item Item
+        private InvItem invItem;
+        internal InvItem InvItem
         {
-            get { return this.item; }
+            get { return this.invItem; }
             set
             {
-                if (this.item != value)
+                if (this.invItem != value)
                 {
                     this.LastMousePos = ImGui.GetMousePos();
-                    this.item = value;
+                    this.invItem = value;
                 }
             }
         }
@@ -64,19 +79,21 @@ namespace SimpleCompare
                 return;
             }
 
-            if (this.Item == null)
+            var hoveredItem = this.InvItem;
+            if (hoveredItem == null || hoveredItem.Item == null)
             {
                 return;
             }
 
-            var equipSlot = this.Item.EquipSlotCategory;
+
+            var equipSlot = hoveredItem.Item.EquipSlotCategory;
             if (equipSlot == null)
             {
                 return;
             }
 
-            var ínventoryType = GetInventoryType(this.Item);
-            if (ínventoryType == InventoryType.ArmorySoulCrystal || ínventoryType == InventoryType.Inventory1)
+            var inventoryType = GetInventoryType(hoveredItem.Item);
+            if (inventoryType == InventoryType.ArmorySoulCrystal || inventoryType == InventoryType.Inventory1)
             {
                 return;
             }
@@ -84,12 +101,12 @@ namespace SimpleCompare
             var mousePos = ImGui.GetMousePos();
             if (Vector2.Distance(this.LastMousePos, mousePos) > 75) // magic number for 4k
             {
-                this.Item = null;
+                this.InvItem.Item = null;
                 this.LastMousePos = mousePos;
                 return;
             }
 
-            var equippedItems = GetEquippedItemsByType(ínventoryType);
+            var equippedItems = GetEquippedItemsByType(inventoryType);
             if (equippedItems.Count > 0)
             {
                 if (ImGui.Begin("SimpleCompare", ref this.visible, ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoDecoration))
@@ -97,8 +114,8 @@ namespace SimpleCompare
                     for (int i = 0; i < equippedItems.Count; i++)
                     {
                         var item = equippedItems[i];
-                        ImGui.Text($"{item.Name}:");
-                        DrawItemCompare(item, this.Item);
+                        ImGui.Text($"{item.Item.Name}:");
+                        DrawItemCompare(item, hoveredItem);
 
                         if (i + 1 < equippedItems.Count)
                         {
@@ -117,9 +134,9 @@ namespace SimpleCompare
 
         }
 
-        private List<Item> GetEquippedItemsByType(InventoryType ínventoryType)
+        private List<InvItem> GetEquippedItemsByType(InventoryType inventoryType)
         {
-            List<Item> items = new List<Item>();
+            List<InvItem> items = new List<InvItem>();
             unsafe
             {
                 var equippedItems = InventoryManager.Instance()->GetInventoryContainer(InventoryType.EquippedItems);
@@ -129,9 +146,9 @@ namespace SimpleCompare
                     var intentoryItem = equippedItems->Items[i];
                     var item = Service.Data.GetExcelSheet<Item>().GetRow(intentoryItem.ItemID);
 
-                    if (GetInventoryType(this.Item) == GetInventoryType(item))
+                    if (inventoryType == GetInventoryType(item))
                     {
-                        items.Add(item);
+                        items.Add(new InvItem(item, (intentoryItem.Flags & ItemFlags.HQ) == ItemFlags.HQ));
                     }
                 }
 
@@ -139,43 +156,50 @@ namespace SimpleCompare
             return items;
         }
 
-        private void DrawItemCompare(Item itemA, Item itemB)
+        private void DrawItemCompare(InvItem itemA, InvItem itemB)
         {
-            DrawStat("Materia", itemB.MateriaSlotCount - itemA.MateriaSlotCount);
+            DrawStat("Materia", itemB.Item.MateriaSlotCount - itemA.Item.MateriaSlotCount);
 
-            var deltaDamageMag = itemB.DamageMag - itemA.DamageMag;
-            DrawStat("Dmg Mag", deltaDamageMag);
-            var deltaDamagePhys = itemB.DamagePhys - itemA.DamagePhys;
-            DrawStat("Dmg Phys", deltaDamagePhys);
-
-            var deltaDefenseMag = itemB.DefenseMag - itemA.DefenseMag;
-            DrawStat("Def Mag", deltaDefenseMag);
-            var deltaDefensePhys = itemB.DefensePhys - itemA.DefensePhys;
-            DrawStat("Def Phys", deltaDefensePhys);
-
-
-
-            var bonusesA = itemA.UnkData59;
-            var bonusesB = itemB.UnkData59;
 
             // map bonus value to type for comparison
-            Dictionary<byte, short> bonusMapA = new Dictionary<byte, short>();
-            Dictionary<byte, short> bonusMapB = new Dictionary<byte, short>();
+            Dictionary<byte, short> bonusMapA = GetItemStats(itemA);
+            Dictionary<byte, short> bonusMapB = GetItemStats(itemB);
+
+            if (!bonusMapA.TryAdd(((byte)ItemBonusType.DEFENSE), (short)itemA.Item.DefensePhys))
+                bonusMapA[((byte)ItemBonusType.DEFENSE)] += (short)itemA.Item.DefensePhys;
+            if (!bonusMapB.TryAdd(((byte)ItemBonusType.DEFENSE), (short)itemB.Item.DefensePhys))
+                bonusMapB[((byte)ItemBonusType.DEFENSE)] += (short)itemB.Item.DefensePhys;
+
+            if (!bonusMapA.TryAdd(((byte)ItemBonusType.MAGIC_DEFENSE), (short)itemA.Item.DefenseMag))
+                bonusMapA[((byte)ItemBonusType.MAGIC_DEFENSE)] += (short)itemA.Item.DefenseMag;
+            if (!bonusMapB.TryAdd(((byte)ItemBonusType.MAGIC_DEFENSE), (short)itemB.Item.DefenseMag))
+                bonusMapB[((byte)ItemBonusType.MAGIC_DEFENSE)] += (short)itemB.Item.DefenseMag;
+
+
+            if (!bonusMapA.TryAdd(((byte)ItemBonusType.PHYSICAL_DAMAGE), (short)itemA.Item.DamagePhys))
+                bonusMapA[((byte)ItemBonusType.PHYSICAL_DAMAGE)] += (short)itemA.Item.DamagePhys;
+            if (!bonusMapB.TryAdd(((byte)ItemBonusType.PHYSICAL_DAMAGE), (short)itemB.Item.DamagePhys))
+                bonusMapB[((byte)ItemBonusType.PHYSICAL_DAMAGE)] += (short)itemB.Item.DamagePhys;
+
+            if (!bonusMapA.TryAdd(((byte)ItemBonusType.MAGIC_DAMAGE), (short)itemA.Item.DamageMag))
+                bonusMapA[((byte)ItemBonusType.MAGIC_DAMAGE)] += (short)itemA.Item.DamageMag;
+            if (!bonusMapB.TryAdd(((byte)ItemBonusType.MAGIC_DAMAGE), (short)itemB.Item.DamageMag))
+                bonusMapB[((byte)ItemBonusType.MAGIC_DAMAGE)] += (short)itemB.Item.DamageMag;
+
+            // TODO: block rate!
+            if (!bonusMapA.TryAdd(((byte)ItemBonusType.BLOCK_STRENGTH), (short)itemA.Item.Block))
+                bonusMapA[((byte)ItemBonusType.BLOCK_STRENGTH)] += (short)itemA.Item.Block;
+            if (!bonusMapB.TryAdd(((byte)ItemBonusType.BLOCK_STRENGTH), (short)itemB.Item.Block))
+                bonusMapB[((byte)ItemBonusType.BLOCK_STRENGTH)] += (short)itemB.Item.Block;
+
+            if (!bonusMapA.TryAdd(((byte)ItemBonusType.BLOCK_RATE), (short)itemA.Item.BlockRate))
+                bonusMapA[((byte)ItemBonusType.BLOCK_RATE)] += (short)itemA.Item.BlockRate;
+            if (!bonusMapB.TryAdd(((byte)ItemBonusType.BLOCK_RATE), (short)itemB.Item.BlockRate))
+                bonusMapB[((byte)ItemBonusType.BLOCK_RATE)] += (short)itemB.Item.BlockRate;
+
             HashSet<byte> bonusTypes = new HashSet<byte>();
-
-            foreach (var bonus in bonusesA)
-            {
-                bonusMapA[bonus.BaseParam] = bonus.BaseParamValue;
-                bonusTypes.Add(bonus.BaseParam);
-            }
-
-            foreach (var bonus in bonusesB)
-            {
-                bonusMapB[bonus.BaseParam] = bonus.BaseParamValue;
-                bonusTypes.Add(bonus.BaseParam);
-            }
-
-
+            bonusTypes.UnionWith(bonusMapA.Keys);
+            bonusTypes.UnionWith(bonusMapB.Keys);
             foreach (var bonusType in bonusTypes)
             {
                 var valueA = bonusMapA.ContainsKey(bonusType) ? bonusMapA[bonusType] : 0;
@@ -185,52 +209,40 @@ namespace SimpleCompare
             }
         }
 
-        private string BaseParamToName(byte baseParam)
+        private Dictionary<byte, short> GetItemStats(InvItem invItem)
         {
-            switch (baseParam)
-            {
-                case 1:
-                    return "Strength";
-                case 2:
-                    return "Dexterity";
-                case 3:
-                    return "Vitality";
-                case 4:
-                    return "Intelligence";
-                case 5:
-                    return "Mind";
-                case 6:
-                    return "Piety";
-                case 11:
-                    return "CP";
-                case 19:
-                    return "Tenacity";
-                case 27:
-                    return "Critical Hit";
-                case 44:
-                    return "Determination";
-                case 45:
-                    return "Skill Speed";
-                case 46:
-                    return "Spell Speed";
-                case 22:
-                    return "Direct Hit Rate";
-                case 70:
-                    return "Craftmanship";
-                case 71:
-                    return "Control";
-                case 72:
-                    return "Gathering";
-                case 73:
-                    return "Perception";
-                case 0:
-                    return "Skill Speed";
+            HashSet<byte> bonusTypes = new HashSet<byte>();
+            Dictionary<byte, short> bonusMap = new Dictionary<byte, short>();
 
-                default:
-                    break;
+            foreach (var bonus in invItem.Item.UnkData59)
+            {
+                bonusMap[bonus.BaseParam] = bonus.BaseParamValue;
+                bonusTypes.Add(bonus.BaseParam);
             }
 
-            return $"<unknown {baseParam}>";
+            if (!invItem.IsHQ)
+            {
+                // We can return here, because no conversion is needed for nq items
+                return bonusMap;
+            }
+
+
+            Dictionary<byte, short> result = new Dictionary<byte, short>();
+            foreach (var bonus in invItem.Item.UnkData73)
+            {
+                if (bonusMap.ContainsKey(bonus.BaseParamSpecial))
+                {
+                    var baseVal = bonusMap[bonus.BaseParamSpecial];
+                    baseVal += bonus.BaseParamValueSpecial;
+                    result[bonus.BaseParamSpecial] = baseVal;
+                }
+                else
+                {
+                    result[bonus.BaseParamSpecial] = bonus.BaseParamValueSpecial;
+                }
+            }
+
+            return result;
         }
 
         private void DrawStat(string name, int value)
@@ -239,6 +251,18 @@ namespace SimpleCompare
             {
                 ImGui.TextColored(value > 0 ? ImGuiColors.ParsedGreen : ImGuiColors.DalamudRed, $"{name}: {(value > 0 ? $"+{value}" : $"{value}")}");
             }
+        }
+
+        private string BaseParamToName(byte baseParam)
+        {
+            if (Enum.IsDefined(typeof(ItemBonusType), baseParam))
+            {
+                ItemBonusType type = (ItemBonusType)baseParam;
+                return type.ToDescriptionString();
+
+            }
+
+            return $"<unknown {baseParam}>";
         }
 
         private InventoryType GetInventoryType(Item item)

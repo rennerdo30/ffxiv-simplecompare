@@ -1,5 +1,6 @@
 ﻿using Dalamud.Game.Command;
 using Dalamud.IoC;
+using Dalamud.Logging;
 using Dalamud.Plugin;
 using Lumina.Excel.GeneratedSheets;
 using System.Runtime.InteropServices;
@@ -35,13 +36,6 @@ namespace SimpleCompare
 
             this.PluginUi = new PluginUI(this.Configuration);
 
-#if false // we dont need any commands for now
-            this.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
-            {
-                HelpMessage = "A useful message to display in /xlhelp"
-            });
-#endif
-
             this.CommonBase = new XivCommonBase(Hooks.Tooltips);
             this.CommonBase.Functions.Tooltips.OnItemTooltip += this.OnItemTooltip;
 
@@ -58,16 +52,21 @@ namespace SimpleCompare
             this.PluginUi.Dispose();
         }
 
-        private void OnCommand(string command, string args)
-        {
-
-        }
-
-
 
         private void DrawUI()
         {
-            this.PluginUi.Draw();
+            if (Service.ClientState != null && Service.ClientState.IsLoggedIn)
+            {
+                // dont crash game!
+                try
+                {
+                    this.PluginUi.Draw();
+                }
+                catch (System.Exception ex)
+                {
+                    PluginLog.LogFatal(ex.ToString());
+                }
+            }
         }
 
 
@@ -81,23 +80,26 @@ namespace SimpleCompare
 #endif
             if (itemId > 2_000_000)
             {
-                this.PluginUi.Item = null;
+                this.PluginUi.InvItem = null;
                 return;
             }
 
+            bool wasHQ = false;
             if (itemId > 1_000_000)
             {
+                wasHQ = true;
                 itemId -= 1_000_000;
             }
 
             var item = Service.Data.GetExcelSheet<Item>().GetRow((uint)itemId);
             if (item == null)
             {
-                this.PluginUi.Item = null;
+                this.PluginUi.InvItem = null;
                 return;
             }
 
-            this.PluginUi.Item = item;
+            this.PluginUi.InvItem = new InvItem(item, wasHQ);
+
 
             // TODO: display comparison in item tooltip?!
         }
