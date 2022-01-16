@@ -1,0 +1,13 @@
+{
+  "Author": "rennerdo30",
+  "Name": "SimpleCompare",
+  "Punchline": "Show simple item comparison",
+  "Description": "Show simple item comparison",
+  "InternalName": "SimpleCompare",
+  "ApplicableVersion": "any",
+  "Tags": [
+    "sample",
+    "plugin",
+    "goats"
+  ]
+}
