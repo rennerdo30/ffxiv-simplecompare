@@ -92,21 +92,25 @@ namespace SimpleCompare
             var equippedItems = GetEquippedItemsByType(ínventoryType);
             if (equippedItems.Count > 0)
             {
-                mousePos.Y = mousePos.Y + 50;
-                mousePos.X = mousePos.X - 350;
-                ImGui.SetNextWindowPos(mousePos, ImGuiCond.Always);
-                //ImGui.SetWindowPos(ImGui.GetCursorPos(), ImGuiCond.Always);
-                //ImGui.SetNextWindowSize(new Vector2(250, 100), ImGuiCond.FirstUseEver);
-                ImGui.SetNextWindowSizeConstraints(new Vector2(250, 250), new Vector2(float.MaxValue, float.MaxValue));
-                if (ImGui.Begin("SimpleCompare", ref this.visible, ImGuiWindowFlags.AlwaysAutoResize))
+                if (ImGui.Begin("SimpleCompare", ref this.visible, ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoDecoration))
                 {
-                    foreach (var item in equippedItems)
+                    for (int i = 0; i < equippedItems.Count; i++)
                     {
+                        var item = equippedItems[i];
                         ImGui.Text($"{item.Name}:");
                         DrawItemCompare(item, this.Item);
-                        ImGui.Separator();
+
+                        if (i + 1 < equippedItems.Count)
+                        {
+                            ImGui.Separator();
+                        }
                     }
                 }
+
+                var size = ImGui.GetWindowSize();
+                //mousePos.Y = mousePos.Y + 50;
+                mousePos.X = mousePos.X - size.X - (25 * ImGui.GetWindowDpiScale());
+                ImGui.SetWindowPos(mousePos, ImGuiCond.Always);
 
                 ImGui.End();
             }
