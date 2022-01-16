@@ -118,6 +118,8 @@ namespace SimpleCompare
 
         private void DrawItemCompare(Item itemA, Item itemB)
         {
+            DrawStat("Materia", itemB.MateriaSlotCount - itemA.MateriaSlotCount);
+
             var deltaDamageMag = itemB.DamageMag - itemA.DamageMag;
             DrawStat("Dmg Mag", deltaDamageMag);
             var deltaDamagePhys = itemB.DamagePhys - itemA.DamagePhys;
@@ -127,6 +129,7 @@ namespace SimpleCompare
             DrawStat("Def Mag", deltaDefenseMag);
             var deltaDefensePhys = itemB.DefensePhys - itemA.DefensePhys;
             DrawStat("Def Phys", deltaDefensePhys);
+
 
 
             var bonusesA = itemA.UnkData59;

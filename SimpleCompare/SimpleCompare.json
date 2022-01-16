@@ -1,13 +1,12 @@
 {
   "Author": "rennerdo30",
   "Name": "SimpleCompare",
-  "Punchline": "Show simple item comparison",
-  "Description": "Show simple item comparison",
+  "Punchline": "Simple item comparison",
+  "Description": "Show simple item comparison when pressing SHIFT and hovering over item",
   "InternalName": "SimpleCompare",
   "ApplicableVersion": "any",
   "Tags": [
-    "sample",
-    "plugin",
-    "goats"
+    "compare",
+    "plugin"
   ]
 }
