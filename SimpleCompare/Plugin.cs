@@ -1,15 +1,7 @@
-﻿using Dalamud.Game;
-using Dalamud.Game.ClientState.Objects.Enums;
-using Dalamud.Game.ClientState.Objects.Types;
-using Dalamud.Game.Command;
+﻿using Dalamud.Game.Command;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Lumina.Excel.GeneratedSheets;
-using System;
-using System.IO;
-using System.Linq;
-using System.Numerics;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using XivCommon;
 using XivCommon.Functions.Tooltips;
@@ -43,10 +35,12 @@ namespace SimpleCompare
 
             this.PluginUi = new PluginUI(this.Configuration);
 
+#if false // we dont need any commands for now
             this.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
             {
                 HelpMessage = "A useful message to display in /xlhelp"
             });
+#endif
 
             this.CommonBase = new XivCommonBase(Hooks.Tooltips);
             this.CommonBase.Functions.Tooltips.OnItemTooltip += this.OnItemTooltip;
@@ -107,7 +101,7 @@ namespace SimpleCompare
             
             this.PluginUi.Item = item;
 
-            // TODO!
+            // TODO: display comparison in item tooltip?!
         }
 
     }
