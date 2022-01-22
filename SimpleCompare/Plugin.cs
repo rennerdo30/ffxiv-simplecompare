@@ -36,7 +36,7 @@ namespace SimpleCompare
 
             this.PluginInterface.UiBuilder.Draw += DrawUI;
 
-
+            
             Service.GameGui.HoveredItemChanged += this.OnItemHover;
         }
 

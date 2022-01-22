@@ -35,29 +35,7 @@ namespace SimpleCompare
             set { this.visible = value; }
         }
 
-        private bool settingsVisible = false;
-        public bool SettingsVisible
-        {
-            get { return this.settingsVisible; }
-            set { this.settingsVisible = value; }
-        }
-
-        private InvItem invItem;
-        internal InvItem InvItem
-        {
-            get { return this.invItem; }
-            set
-            {
-                if (this.invItem != value)
-                {
-                    this.LastMousePos = ImGui.GetMousePos();
-                    this.invItem = value;
-                }
-            }
-        }
-
-        private Vector2 lastMousePos;
-        private Vector2 LastMousePos { get { return this.lastMousePos; } set { this.lastMousePos = value; } }
+        internal InvItem InvItem { get; set; }
 
         public PluginUI(Configuration configuration)
         {
@@ -75,7 +53,6 @@ namespace SimpleCompare
         {
             if ((GetKeyState((int)0x10) & 0x8000) == 0)
             {
-                this.LastMousePos = ImGui.GetMousePos();
                 return;
             }
 
@@ -98,14 +75,6 @@ namespace SimpleCompare
                 return;
             }
 
-            var mousePos = ImGui.GetMousePos();
-            if (Vector2.Distance(this.LastMousePos, mousePos) > 75) // magic number for 4k
-            {
-                this.InvItem.Item = null;
-                this.LastMousePos = mousePos;
-                return;
-            }
-
             var equippedItems = GetEquippedItemsByType(inventoryType);
             if (equippedItems.Count > 0)
             {
@@ -125,7 +94,7 @@ namespace SimpleCompare
                 }
 
                 var size = ImGui.GetWindowSize();
-                //mousePos.Y = mousePos.Y + 50;
+                var mousePos = ImGui.GetMousePos();
                 mousePos.X = mousePos.X - size.X - (25 * ImGui.GetWindowDpiScale());
                 ImGui.SetWindowPos(mousePos, ImGuiCond.Always);
 
@@ -186,7 +155,6 @@ namespace SimpleCompare
             if (!bonusMapB.TryAdd(((byte)ItemBonusType.MAGIC_DAMAGE), (short)itemB.Item.DamageMag))
                 bonusMapB[((byte)ItemBonusType.MAGIC_DAMAGE)] += (short)itemB.Item.DamageMag;
 
-            // TODO: block rate!
             if (!bonusMapA.TryAdd(((byte)ItemBonusType.BLOCK_STRENGTH), (short)itemA.Item.Block))
                 bonusMapA[((byte)ItemBonusType.BLOCK_STRENGTH)] += (short)itemA.Item.Block;
             if (!bonusMapB.TryAdd(((byte)ItemBonusType.BLOCK_STRENGTH), (short)itemB.Item.Block))
