@@ -78,7 +78,7 @@ namespace SimpleCompare
             var equippedItems = GetEquippedItemsByType(inventoryType);
             if (equippedItems.Count > 0)
             {
-                if (ImGui.Begin("SimpleCompare", ref this.visible, ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoDecoration))
+                if (ImGui.Begin("SimpleCompare", ref this.visible, ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoBringToFrontOnFocus | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoNavFocus))
                 {
                     for (int i = 0; i < equippedItems.Count; i++)
                     {
