@@ -83,7 +83,7 @@ namespace SimpleCompare
                     for (int i = 0; i < equippedItems.Count; i++)
                     {
                         var item = equippedItems[i];
-                        ImGui.Text($"{item.Item.Name}:");
+                        ImGui.Text($"{item.Item.Name} (iLvl {item.Item.LevelItem.Row}):");
                         DrawItemCompare(item, hoveredItem);
 
                         if (i + 1 < equippedItems.Count)
