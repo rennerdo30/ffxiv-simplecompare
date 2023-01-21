@@ -9,5 +9,9 @@
     "compare",
     "plugin"
   ],
-  "AssemblyVersion": "0.0.0.2"
+  "CategoryTags": null,
+  "RepoUrl": "https://github.com/rennerdo30/ffxiv-simplecompare",
+  "ImageUrls": null,
+  "IconUrl": "https://github.com/rennerdo30/ffxiv-simplecompare/main/SimpleCompare/Images/icon.png"
+
 }
