@@ -4,12 +4,8 @@ using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
-using System.Numerics;
 using System.Runtime.InteropServices;
 using static FFXIVClientStructs.FFXIV.Client.Game.InventoryItem;
-using System.Linq;
-using Newtonsoft.Json.Linq;
-using System.Xml.Linq;
 
 namespace SimpleCompare
 {
