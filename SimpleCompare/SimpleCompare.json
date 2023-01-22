@@ -1,5 +1,5 @@
 {
-  "Author": "rennerdo30",
+  "Author": "53m1k0l0n, rennerdo30",
   "Name": "SimpleCompare",
   "Punchline": "Simple item comparison",
   "Description": "Show simple item comparison when pressing SHIFT and hovering over item",
@@ -10,8 +10,8 @@
     "plugin"
   ],
   "CategoryTags": null,
-  "RepoUrl": "https://github.com/rennerdo30/ffxiv-simplecompare",
+  "RepoUrl": "https://github.com/53m1k0l0n/ffxiv-simplecompare",
   "ImageUrls": null,
-  "IconUrl": "https://github.com/rennerdo30/ffxiv-simplecompare/main/SimpleCompare/Images/icon.png"
+  "IconUrl": "https://raw.githubusercontent.com/53m1k0l0n/ffxiv-simplecompare/main/SimpleCompare/Images/icon.png"
 
 }

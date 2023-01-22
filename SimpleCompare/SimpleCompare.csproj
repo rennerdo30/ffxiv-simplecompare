@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-	  <Authors>rennerdo30</Authors>
+	  <Authors>53m1k0l0n, rennerdo30</Authors>
 	  <Version>1.0.0.0</Version>
 	  <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
@@ -58,4 +58,7 @@
     </None>
   </ItemGroup>
 
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+	  <RemoveDir Directories="$(ProjectDir)\bin\" />
+  </Target>
 </Project>
