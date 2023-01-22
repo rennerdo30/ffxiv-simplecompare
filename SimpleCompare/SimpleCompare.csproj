@@ -57,8 +57,5 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
-  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-	  <RemoveDir Directories="$(ProjectDir)\bin\" />
-  </Target>
+	
 </Project>
