@@ -4,10 +4,8 @@ using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
-using System.Numerics;
 using System.Runtime.InteropServices;
 using static FFXIVClientStructs.FFXIV.Client.Game.InventoryItem;
-using System.Linq;
 
 namespace SimpleCompare
 {
@@ -83,9 +81,8 @@ namespace SimpleCompare
                     for (int i = 0; i < equippedItems.Count; i++)
                     {
                         var item = equippedItems[i];
-                        ImGui.Text($"{item.Item.Name} (iLvl {item.Item.LevelItem.Row}):");
-                        DrawItemCompare(item, hoveredItem);
-
+                        ImGui.Text($"Equipped: {item.Item.Name} (iLvl {item.Item.LevelItem.Row}):");
+                        DrawItemCompareEquipped(item, hoveredItem);
                         if (i + 1 < equippedItems.Count)
                         {
                             ImGui.Separator();
@@ -95,7 +92,25 @@ namespace SimpleCompare
 
                 var size = ImGui.GetWindowSize();
                 var mousePos = ImGui.GetMousePos();
-                mousePos.X = mousePos.X - size.X - (25 * ImGui.GetWindowDpiScale());
+                mousePos.X -= size.X + 25;
+                ImGui.SetWindowPos(mousePos, ImGuiCond.Always);
+
+                if (ImGui.Begin("SimpleCompare2", ref this.visible, ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoBringToFrontOnFocus | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoNavFocus))
+                {
+                    for (int i = 0; i < equippedItems.Count; i++)
+                    {
+                        var item = equippedItems[i];
+                        ImGui.Text($"{hoveredItem.Item.Name} (iLvl {hoveredItem.Item.LevelItem.Row}):");
+                        DrawItemCompareHovered(item, hoveredItem);
+
+                        if (i + 1 < equippedItems.Count)
+                        {
+                            ImGui.Separator();
+                        }
+                    }
+                }
+
+                mousePos.X += size.X + 50;
                 ImGui.SetWindowPos(mousePos, ImGuiCond.Always);
 
                 ImGui.End();
@@ -125,7 +140,30 @@ namespace SimpleCompare
             return items;
         }
 
-        private void DrawItemCompare(InvItem itemA, InvItem itemB)
+        private void DrawItemCompareEquipped(InvItem itemA, InvItem itemB)
+        {
+            DrawStat("Materia", itemA.Item.MateriaSlotCount - itemB.Item.MateriaSlotCount);
+
+            // map bonus value to type for comparison
+            Dictionary<byte, short> bonusMapA = GetItemStats(itemA);
+            Dictionary<byte, short> bonusMapB = GetItemStats(itemB);
+
+            bonusMapA = BonusMapA(bonusMapA, itemA);
+            bonusMapB = BonusMapB(bonusMapB, itemB);
+
+            HashSet<byte> bonusTypes = new HashSet<byte>();
+            bonusTypes = BonusTypes(bonusTypes, bonusMapA, bonusMapB);
+
+            foreach (var bonusType in bonusTypes)
+            {
+                var valueA = bonusMapA.ContainsKey(bonusType) ? bonusMapA[bonusType] : 0;
+                var valueB = bonusMapB.ContainsKey(bonusType) ? bonusMapB[bonusType] : 0;
+
+                DrawStat(BaseParamToName(bonusType), valueA - valueB);
+            }
+        }
+
+        private void DrawItemCompareHovered(InvItem itemA, InvItem itemB)
         {
             DrawStat("Materia", itemB.Item.MateriaSlotCount - itemA.Item.MateriaSlotCount);
 
@@ -134,40 +172,14 @@ namespace SimpleCompare
             Dictionary<byte, short> bonusMapA = GetItemStats(itemA);
             Dictionary<byte, short> bonusMapB = GetItemStats(itemB);
 
-            if (!bonusMapA.TryAdd(((byte)ItemBonusType.DEFENSE), (short)itemA.Item.DefensePhys))
-                bonusMapA[((byte)ItemBonusType.DEFENSE)] += (short)itemA.Item.DefensePhys;
-            if (!bonusMapB.TryAdd(((byte)ItemBonusType.DEFENSE), (short)itemB.Item.DefensePhys))
-                bonusMapB[((byte)ItemBonusType.DEFENSE)] += (short)itemB.Item.DefensePhys;
-
-            if (!bonusMapA.TryAdd(((byte)ItemBonusType.MAGIC_DEFENSE), (short)itemA.Item.DefenseMag))
-                bonusMapA[((byte)ItemBonusType.MAGIC_DEFENSE)] += (short)itemA.Item.DefenseMag;
-            if (!bonusMapB.TryAdd(((byte)ItemBonusType.MAGIC_DEFENSE), (short)itemB.Item.DefenseMag))
-                bonusMapB[((byte)ItemBonusType.MAGIC_DEFENSE)] += (short)itemB.Item.DefenseMag;
+            bonusMapA = BonusMapA(bonusMapA, itemA);
+            bonusMapB = BonusMapB(bonusMapB, itemB);
 
 
-            if (!bonusMapA.TryAdd(((byte)ItemBonusType.PHYSICAL_DAMAGE), (short)itemA.Item.DamagePhys))
-                bonusMapA[((byte)ItemBonusType.PHYSICAL_DAMAGE)] += (short)itemA.Item.DamagePhys;
-            if (!bonusMapB.TryAdd(((byte)ItemBonusType.PHYSICAL_DAMAGE), (short)itemB.Item.DamagePhys))
-                bonusMapB[((byte)ItemBonusType.PHYSICAL_DAMAGE)] += (short)itemB.Item.DamagePhys;
-
-            if (!bonusMapA.TryAdd(((byte)ItemBonusType.MAGIC_DAMAGE), (short)itemA.Item.DamageMag))
-                bonusMapA[((byte)ItemBonusType.MAGIC_DAMAGE)] += (short)itemA.Item.DamageMag;
-            if (!bonusMapB.TryAdd(((byte)ItemBonusType.MAGIC_DAMAGE), (short)itemB.Item.DamageMag))
-                bonusMapB[((byte)ItemBonusType.MAGIC_DAMAGE)] += (short)itemB.Item.DamageMag;
-
-            if (!bonusMapA.TryAdd(((byte)ItemBonusType.BLOCK_STRENGTH), (short)itemA.Item.Block))
-                bonusMapA[((byte)ItemBonusType.BLOCK_STRENGTH)] += (short)itemA.Item.Block;
-            if (!bonusMapB.TryAdd(((byte)ItemBonusType.BLOCK_STRENGTH), (short)itemB.Item.Block))
-                bonusMapB[((byte)ItemBonusType.BLOCK_STRENGTH)] += (short)itemB.Item.Block;
-
-            if (!bonusMapA.TryAdd(((byte)ItemBonusType.BLOCK_RATE), (short)itemA.Item.BlockRate))
-                bonusMapA[((byte)ItemBonusType.BLOCK_RATE)] += (short)itemA.Item.BlockRate;
-            if (!bonusMapB.TryAdd(((byte)ItemBonusType.BLOCK_RATE), (short)itemB.Item.BlockRate))
-                bonusMapB[((byte)ItemBonusType.BLOCK_RATE)] += (short)itemB.Item.BlockRate;
 
             HashSet<byte> bonusTypes = new HashSet<byte>();
-            bonusTypes.UnionWith(bonusMapA.Keys);
-            bonusTypes.UnionWith(bonusMapB.Keys);
+            bonusTypes = BonusTypes(bonusTypes, bonusMapA, bonusMapB);
+
             foreach (var bonusType in bonusTypes)
             {
                 var valueA = bonusMapA.ContainsKey(bonusType) ? bonusMapA[bonusType] : 0;
@@ -175,6 +187,61 @@ namespace SimpleCompare
 
                 DrawStat(BaseParamToName(bonusType), valueB - valueA);
             }
+        }
+
+        private Dictionary<byte, short> BonusMapA(Dictionary<byte, short> bonusMapA, InvItem itemA)
+        {
+            if (!bonusMapA.TryAdd(((byte)ItemBonusType.DEFENSE), (short)itemA.Item.DefensePhys))
+                bonusMapA[((byte)ItemBonusType.DEFENSE)] += (short)itemA.Item.DefensePhys;
+
+            if (!bonusMapA.TryAdd(((byte)ItemBonusType.MAGIC_DEFENSE), (short)itemA.Item.DefenseMag))
+                bonusMapA[((byte)ItemBonusType.MAGIC_DEFENSE)] += (short)itemA.Item.DefenseMag;
+
+            if (!bonusMapA.TryAdd(((byte)ItemBonusType.PHYSICAL_DAMAGE), (short)itemA.Item.DamagePhys))
+                bonusMapA[((byte)ItemBonusType.PHYSICAL_DAMAGE)] += (short)itemA.Item.DamagePhys;
+
+            if (!bonusMapA.TryAdd(((byte)ItemBonusType.MAGIC_DAMAGE), (short)itemA.Item.DamageMag))
+                bonusMapA[((byte)ItemBonusType.MAGIC_DAMAGE)] += (short)itemA.Item.DamageMag;
+
+            if (!bonusMapA.TryAdd(((byte)ItemBonusType.BLOCK_STRENGTH), (short)itemA.Item.Block))
+                bonusMapA[((byte)ItemBonusType.BLOCK_STRENGTH)] += (short)itemA.Item.Block;
+
+            if (!bonusMapA.TryAdd(((byte)ItemBonusType.BLOCK_RATE), (short)itemA.Item.BlockRate))
+                bonusMapA[((byte)ItemBonusType.BLOCK_RATE)] += (short)itemA.Item.BlockRate;
+
+            return bonusMapA;
+        }
+
+        private Dictionary<byte, short> BonusMapB(Dictionary<byte, short> bonusMapB, InvItem itemB)
+        {
+            if (!bonusMapB.TryAdd(((byte)ItemBonusType.DEFENSE), (short)itemB.Item.DefensePhys))
+                bonusMapB[((byte)ItemBonusType.DEFENSE)] += (short)itemB.Item.DefensePhys;
+
+            if (!bonusMapB.TryAdd(((byte)ItemBonusType.MAGIC_DEFENSE), (short)itemB.Item.DefenseMag))
+                bonusMapB[((byte)ItemBonusType.MAGIC_DEFENSE)] += (short)itemB.Item.DefenseMag;
+
+
+            if (!bonusMapB.TryAdd(((byte)ItemBonusType.PHYSICAL_DAMAGE), (short)itemB.Item.DamagePhys))
+                bonusMapB[((byte)ItemBonusType.PHYSICAL_DAMAGE)] += (short)itemB.Item.DamagePhys;
+
+            if (!bonusMapB.TryAdd(((byte)ItemBonusType.MAGIC_DAMAGE), (short)itemB.Item.DamageMag))
+                bonusMapB[((byte)ItemBonusType.MAGIC_DAMAGE)] += (short)itemB.Item.DamageMag;
+
+            if (!bonusMapB.TryAdd(((byte)ItemBonusType.BLOCK_STRENGTH), (short)itemB.Item.Block))
+                bonusMapB[((byte)ItemBonusType.BLOCK_STRENGTH)] += (short)itemB.Item.Block;
+
+            if (!bonusMapB.TryAdd(((byte)ItemBonusType.BLOCK_RATE), (short)itemB.Item.BlockRate))
+                bonusMapB[((byte)ItemBonusType.BLOCK_RATE)] += (short)itemB.Item.BlockRate;
+
+            return bonusMapB;
+        }
+
+        private HashSet<byte> BonusTypes(HashSet<byte> bonusTypes, Dictionary<byte, short> bonusMapA, Dictionary<byte, short> bonusMapB)
+        {
+            bonusTypes.UnionWith(bonusMapA.Keys);
+            bonusTypes.UnionWith(bonusMapB.Keys);
+
+            return bonusTypes;
         }
 
         private Dictionary<byte, short> GetItemStats(InvItem invItem)
