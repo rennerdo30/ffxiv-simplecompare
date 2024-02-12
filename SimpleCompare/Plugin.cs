@@ -68,7 +68,6 @@ namespace SimpleCompare
 
         public void Dispose()
         {
-            this.CommandManager.RemoveHandler(commandName);
             this.PluginUi.Dispose();
             Service.GameGui.HoveredItemChanged -= this.OnItemHover;
         }

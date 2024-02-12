@@ -27,7 +27,7 @@ namespace SimpleCompare
         [PluginService] public static IKeyState KeyState { get; private set; }
         [PluginService] public static ILibcFunction LibcFunction { get; private set; }
         [PluginService] public static IObjectTable Objects { get; private set; }
-        [PluginService] public static SigScanner SigScanner { get; private set; }
+        [PluginService] public static ISigScanner SigScanner { get; private set; }
         [PluginService] public static ITargetManager Targets { get; private set; }
         [PluginService] public static IToastGui Toasts { get; private set; }
     }
