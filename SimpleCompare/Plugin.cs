@@ -5,6 +5,7 @@ using Dalamud.Plugin;
 using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Runtime.InteropServices;
+using Dalamud.Plugin.Services;
 
 namespace SimpleCompare
 {
@@ -15,13 +16,13 @@ namespace SimpleCompare
         private const string commandName = "/simplecompare";
 
         private DalamudPluginInterface PluginInterface { get; init; }
-        private CommandManager CommandManager { get; init; }
+        private ICommandManager CommandManager { get; init; }
         private Configuration Configuration { get; init; }
         private PluginUI PluginUi { get; init; }
 
         public Plugin(
             [RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
-            [RequiredVersion("1.0")] CommandManager commandManager)
+            [RequiredVersion("1.0")] ICommandManager commandManager)
         {
             this.PluginInterface = pluginInterface;
             this.CommandManager = commandManager;
@@ -67,7 +68,6 @@ namespace SimpleCompare
 
         public void Dispose()
         {
-            this.CommandManager.RemoveHandler(commandName);
             this.PluginUi.Dispose();
             Service.GameGui.HoveredItemChanged -= this.OnItemHover;
         }
