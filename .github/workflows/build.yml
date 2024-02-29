@@ -12,7 +12,7 @@ env:
   PUBLIC_NAME: SimpleCompare
   SOLUTION_NAME: SimpleCompare
   INTERNAL_NAME: SimpleCompare
-  RELEASE_DIR: SimpleCompare\bin\Release\SimpleCompare
+  RELEASE_DIR: SimpleCompare\bin\x64\Release\SimpleCompare
   PERSONAL_PLUGIN_REPO: Rennerdo30/MyDalamudPlugins
   PR_PLUGIN_REPO: Rennerdo30/DalamudPlugins
 
